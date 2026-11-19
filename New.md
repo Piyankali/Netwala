@@ -1,4 +1,17 @@
-# 🕵️ NETWALA MCP — Autonomous AI Pentesting Framework                           
+# 🕵️ NETWALA MCP — Autonomous AI Pentesting Framework            
+
+<p align="center">
+<b>AI-native browser automation and web application security testing over MCP</b>
+</p>
+
+<p align="center">
+<a href="https://github.com/Piyankali/Netwala-"><img src="https://img.shields.io/badge/version-3.0-blue.svg" alt="Version 3.0"></a>
+<img src="https://img.shields.io/badge/engine-Playwright%20Firefox%20%2B%20Chromium-green.svg" alt="Playwright Firefox and Chromium">
+<img src="https://img.shields.io/badge/tools-58-orange.svg" alt="58 MCP tools">
+<img src="https://img.shields.io/badge/license-MIT-red.svg" alt="MIT License">
+<img src="https://img.shields.io/badge/python-3.10%2B-blue.svg" alt="Python 3.10+">
+</p>
+
 **AI-native browser automation and web application security testing over MCP.**
 
 Netwala MCP is a Model Context Protocol (MCP) server that gives an LLM agent a
