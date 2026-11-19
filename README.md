@@ -5,12 +5,12 @@
 </p>
 
 <p align="center">
-<a href="https://github.com/Piyankali/Netwala-"><img src="https://img.shields.io/badge/version-3.0-blue.svg" alt="Version 3.0"></a>
+<a href="https://github.com/Piyankali/Netwala"><img src="https://img.shields.io/badge/version-3.0-blue.svg" alt="Version 3.0"></a>
 <img src="https://img.shields.io/badge/engine-Playwright%20Firefox-green.svg" alt="Playwright Firefox (Chromium removed)">
 <img src="https://img.shields.io/badge/tools-59%20custom-orange.svg" alt="59 custom MCP tools">
 <img src="https://img.shields.io/badge/meta-4-lightgrey.svg" alt="4 MCP meta-tools">
 <img src="https://img.shields.io/badge/license-MIT-red.svg" alt="MIT License">
-<img src="https://img.shields.io/badge/python-3.10%2B-blue.svg" alt="Python 3.10+">
+<img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+">
 </p>
 
 **Playwright-powered MCP server for browser automation, recon, and authorized
@@ -18,13 +18,15 @@ web-application security testing.**
 
 Netwala MCP is a Model Context Protocol (MCP) server that gives an LLM agent a
 real browser. It exposes **59 custom tools** plus the 4 standard MCP meta-tools
-(**63 total**) to compatible AI clients such as Hermes and Claude.             
+(**63 total**) to compatible AI clients such as Hermes and Claude.
+
 It combines Playwright-powered **Firefox** automation with page inspection,
 crawling, request analysis, network capture, isolated browser contexts, WAF
 detection, a built-in payload library, and evidence collection — all while
 keeping the fingerprint self-consistent and the input surface validated.
 
-```                                                                            subfinder / nmap / katana   ->   netwala (live verify, WAF, evidence)
+```
+subfinder / nmap / katana   ->   netwala (live verify, WAF, evidence)
                                ->   nuclei / ffuf (known vulns, dirs)
                                ->   netwala (request-level IDOR, API testing)
                                ->   findings report
@@ -50,6 +52,7 @@ keeping the fingerprint self-consistent and the input surface validated.
 - [Connect an MCP client](#connect-an-mcp-client)
 - [Configuration](#configuration)
 - [Security model](#security-model)
+- [Known security boundaries & caveats](#known-security-boundaries--caveats)
 - [Anti-bot design](#anti-bot-design)
 - [Security considerations](#-security-considerations)
 - [Testing and validation](#-testing-and-validation)
@@ -192,7 +195,7 @@ keeping the fingerprint self-consistent and the input surface validated.
 |---|---|---|
 | 51 | `spawn_subagent_environment` | Isolated context with proxy, UA, viewport, locale, tz, device profile |
 | 52 | `destroy_subagent_environment` | Tear down an isolated context |
-| 53 | `emulate_device` | Apply a device profile (iPhone, iPhone 13, iPad, Pixel) |
+| 53 | `emulate_device` | Apply a device profile (iPhone, iPhone 13, iPad, Pixel, Samsung, Desktop) |
 | 54 | `batch_execute_across_agents` | Run JS tasks across multiple contexts with concurrency control |
 
 ### 10. Misc — 5 tools
@@ -369,8 +372,8 @@ apt install -y python3 python3-pip python3-venv firefox-esr xvfb \
                libgl1-mesa-dri mesa-utils curl ca-certificates git
 
 # Clone the repository
-git clone https://github.com/Piyankali/Netwala-.git
-cd Netwala-
+git clone https://github.com/Piyankali/Netwala.git
+cd Netwala
 
 # Python dependencies
 python3 -m pip install --break-system-packages \
@@ -383,8 +386,8 @@ python3 -m playwright install firefox
 ### Option B — Linux / macOS / WSL2
 
 ```bash
-git clone https://github.com/Piyankali/Netwala-.git
-cd Netwala-
+git clone https://github.com/Piyankali/Netwala.git
+cd Netwala
 
 python3 -m venv .venv
 source .venv/bin/activate
@@ -545,7 +548,7 @@ After starting the server:
 
 ### Device presets
 
-`iphone`, `iphone 13`, `ipad`, `pixel` — each sets UA, viewport, DPR, touch
+`iphone`, `iphone 13`, `ipad`, `pixel`, `samsung`, `desktop` — each sets UA, viewport, DPR, touch
 points, `oscpu`, `platform`, locale and timezone, applied durably across
 navigation. Unknown names are rejected with the list of valid presets.
 
@@ -578,10 +581,54 @@ agent — so nothing is trusted.
   authorized internal / SSRF testing).
 - **Arbitrary JavaScript.** `evaluate_javascript(js_code=...)` is arbitrary JS by
   design — that is the tool's purpose.
+- **TLS verification.** `http_request_cffi` **defaults to `verify_ssl=False`** so
+  self-signed pentest targets work. That means certificate validation is NOT
+  checked unless you pass `verify_ssl=True` — a missing-validation finding will
+  be invisible under the default. See
+  [Known security boundaries & caveats](#known-security-boundaries--caveats).
 - **Cleanup.** Stale Playwright profile directories are swept at startup, and the
   browser is closed on `SIGINT`/`SIGTERM`/exit. A `SIGKILL` cannot be caught, so
   the startup sweep is the recovery path.
 - **Error hygiene.** Structured error objects only; no tracebacks leak.
+
+> **What "verified" means here.** Behavioural claims (tool counts, statuses,
+> WAF results, cleanup) come from **runtime** runs against a live server, and the
+> numbers quoted were observed on that run. Statements about what the code does
+> (guards, defaults, parameter plumbing) come from **static** reading of the
+> source — `ast.parse` / argument-flow checks — and are labelled as such. The two
+> are not interchangeable: a static claim is not evidence that the running server
+> behaves that way, and a runtime observation can be environment-specific.
+
+---
+
+## Known security boundaries & caveats
+
+Read this before trusting the guards.
+
+- **`NETWALA_ALLOW_LOOPBACK=1` disables the SSRF/loopback guard for the whole
+  session.** `start_netwala.sh` sets it by default so authorized internal and
+  SSRF testing works. While it is on, `navigate`, `replay_request`,
+  `smart_replay`, `http_request_cffi`, `capture_har` and `load_storage_state`
+  will reach `127.0.0.1`, `::1`, RFC1918 ranges, link-local and cloud-metadata
+  addresses. Set `NETWALA_ALLOW_LOOPBACK=0` if you do not need internal targets.
+- **Tools that write files.** `run_wcag_accessibility_audit(save_to_file=...)`,
+  `capture_screenshot` / `take_element_screenshot(save_path=...)`,
+  `capture_har(har_path=...)` and `save_storage_state(path=...)` all write to
+  disk. Every one of them is now constrained by `safe_path()` to `/tmp`,
+  `/root/netwala` and `/data/data/com.termux/files/home` (plus
+  `NETWALA_IO_DIRS`). `set_file_input_files` writes temporary upload files to
+  `/tmp` under a `basename()`-sanitised name and removes them afterwards.
+- **`evaluate_javascript` is arbitrary code.** It runs in the page's origin with
+  the page's cookies. That is the intended capability, not a bug — but a
+  prompt-injected page can steer the agent into running it.
+- **`http_request_cffi` skips certificate verification by default**
+  (`verify_ssl=False`) so self-signed pentest targets work. Set
+  `verify_ssl=True` when you actually want to test certificate validation — the
+  default will happily hide a missing-validation bug.
+- **`intercept_request` rewrites traffic in the browser context.** It is a test
+  instrument, not a secure proxy.
+- **No automated CAPTCHA solving.** There is no solver, and none is planned.
+- **Browser contexts are not OS sandboxes.** They isolate browser state only.
 
 ---
 
@@ -817,7 +864,7 @@ Netwala is open-source software. If it is useful in your authorized security
 research, you can support ongoing development.
 
 - **GitHub Sponsors:** https://github.com/sponsors/Piyankali
-- **Issues:** https://github.com/Piyankali/Netwala-/issues
+- **Issues:** https://github.com/Piyankali/Netwala/issues
 
 ---
 
