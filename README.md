@@ -13,6 +13,8 @@
 <img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+">
 </p>
 
+<img width="1672" height="941" alt="netwala" src="https://github.com/user-attachments/assets/e1a580a9-f5de-4274-bf88-f2a3dc2914f9" />
+
 **Playwright-powered MCP server for browser automation, recon, and authorized
 web-application security testing.**
 
