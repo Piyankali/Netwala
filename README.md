@@ -343,7 +343,9 @@ Termux/PRoot the distro `firefox-esr` package is used instead. On supported
 Debian-like systems you can install browser system dependencies with:
 
 ```bash
-python3 -m mcp==1.30.0 playwright install-deps firefox
+
+python3 -m pip install --upgrade pip && python3 -m pip install "mcp==1.30.0" playwright curl_cffi cryptography requests && python3 -m playwright install-deps firefox && python3 -m playwright install firefox
+
 ```
 
 > **Android/PRoot caveat:** `install-deps` and prebuilt Playwright browser
