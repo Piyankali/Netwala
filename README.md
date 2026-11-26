@@ -343,7 +343,7 @@ Termux/PRoot the distro `firefox-esr` package is used instead. On supported
 Debian-like systems you can install browser system dependencies with:
 
 ```bash
-python3 -m playwright install-deps firefox
+python3 -m mcp==1.30.0 playwright install-deps firefox
 ```
 
 > **Android/PRoot caveat:** `install-deps` and prebuilt Playwright browser
@@ -379,7 +379,7 @@ cd Netwala
 
 # Python dependencies
 python3 -m pip install --break-system-packages \
-    mcp playwright curl_cffi cryptography requests
+    mcp==1.30.0 playwright curl_cffi cryptography requests
 
 # Browser binaries (may not work in every PRoot environment — see caveat)
 python3 -m playwright install firefox
@@ -394,7 +394,7 @@ cd Netwala
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install mcp playwright curl_cffi cryptography requests
+python -m pip install mcp==1.30.0 playwright curl_cffi cryptography requests
 python3 -m playwright install firefox
 
 # On Debian/Ubuntu, if required:
